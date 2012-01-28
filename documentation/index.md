@@ -60,17 +60,17 @@ The photolibrary.photos module can be called using the following parameters:
 > This is a callback that will be called once the photos have been gathered
 
 3. error
-> This is a callback that will be called if an occurred while gathering the photos
+> This is a callback that will be called if an error occurred while gathering the photos
 
 4. start
 > This will include all photos whose index is greater than or equal to the value passed 
-> into start.
+> in to start.
 >
 > The default is 0.
 
 5. end
-> This will include all photos whos index is less than or equal to the value passed into
-> end.  If end is set to 0 then there is no upper limit imposed.  All remaining photos
+> This will include all photos whos index is less than or equal to the value passed in to
+> end.  If end is set to 0, then there is no upper limit imposed.  All remaining photos
 > will be included.
 > 
 > The default is 0.
