@@ -1,0 +1,60 @@
+The Urban Image Photo Library Module
+===========================================
+
+The purpose of this library is to provide easy access to the user's photo library.
+Not only will it return the photos, but it will also return useful information about 
+the photo.  This library will return the following pieces of information about a photo:
+
+1. The full resolution of the image
+2. A thumbnail of the image
+3. The type of file (image or video)
+4. Location information including:
+	a. latitude
+	b. longitude
+	c. altitude
+	d. course
+	e. horizontal accuracy
+	f. vertical accuracy
+	g. speed
+	h. timestamp
+5. If the file is a video it will return the duration
+6. Orientation
+7. Creation Date
+8. Available file formats
+9. Ways to access the file
+
+This library also provides a way to return certain groups of photos and to also return a 
+section of photos based on start and end parameters.
+
+INSTALL THE URBAN IMAGE MODULE
+------------------------------
+
+1. Run `build.py` which creates your distribution
+2. cd to `/Library/Application Support/Titanium`
+3. copy this zip file into the folder of your Titanium SDK
+
+REGISTER THE URBAN IMAGE MODULE
+-------------------------------
+
+Register your module with your application by editing `tiapp.xml` and adding your module.
+Example:
+
+<modules>
+	<module version="0.1">qs.urbanimage.library</module>
+</modules>
+
+When you run your project, the compiler will know automatically compile in your module
+dependencies and copy appropriate image assets into the application.
+
+DOCUMENTATION FOR THE URBAN IMAGE MODULE
+----------------------------------------
+
+Documentation for this module can be found in documenation/index.md
+
+EXAMPLE CODE
+--------------------------
+An example application exists in example/app.js that demonstrates the use of the module.  
+The example app displays all of the photos from the photo library along with the creation date.
+If the photo has location data stored with it then you can click on the photo and it will plot the
+photo's location on a map.
+

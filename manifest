@@ -1,0 +1,28 @@
+#
+# this is your module manifest and used by Titanium
+# during compilation, packaging, distribution, etc.
+#
+version: 1.0
+apiversion: 2
+description: A module that provides access to the user's photo library.
+author: Quickstone Software, LLC
+license: Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+copyright: Copyright (c) 2012
+
+
+# these should not be edited
+name: urbanimagelibrary
+moduleid: qs.urbanimage.library
+guid: c6d0f327-80e0-400f-929c-012ece34ec98
+platform: iphone
+minsdk: 1.8.0.1
