@@ -43,13 +43,13 @@ Example:
 	<module version="0.1">qs.urbanimage.library</module>
 </modules>
 
-When you run your project, the compiler will know automatically compile in your module
+When you run your project, the compiler will know to automatically compile in your module
 dependencies and copy appropriate image assets into the application.
 
 DOCUMENTATION FOR THE URBAN IMAGE MODULE
 ----------------------------------------
 
-Documentation for this module can be found in documenation/index.md
+Documentation for this module can be found in documentation/index.md
 
 EXAMPLE CODE
 --------------------------
