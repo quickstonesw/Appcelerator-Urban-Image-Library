@@ -89,7 +89,7 @@ The module will return an array of objects in the "photos" attribute.
 > The type of file.  This attribute can take on either "image", "video", or "unknown"
 
 4. location 
-> Location information see [Apple's documentation for the CLLocation class](http://developer.apple.com/library/IOs/#documentation/CoreLocation/Reference/CLLocation_Class/CLLocation/CLLocation.html#//apple_ref/occ/cl/CLLocation)
+> Location information - See [Apple's documentation for the CLLocation class](http://developer.apple.com/library/IOs/#documentation/CoreLocation/Reference/CLLocation_Class/CLLocation/CLLocation.html#//apple_ref/occ/cl/CLLocation)
 > The location object consists of the following attributes:
 > 	* latitude - The latitude
 >	* longitude - The longitude
@@ -101,11 +101,11 @@ The module will return an array of objects in the "photos" attribute.
 >	* timestamp - The time at which this location was determined.
 
 5. playTime 
-> If the file is a video it will return the play time duration of the video.  If the file is not a video it the "playTime" attribute will not be returned.
+> If the file is a video, it will return the play time duration of the video.  If the file is not a video, then the "playTime" attribute is not returned.
 
 6. orientation
-> The corresponding value contains the photos orientation as described by the TIFF format.
-> The TIFF specification can be found (http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf)
+> The corresponding value contains the photo's orientation as described by the TIFF format.
+> The TIFF specification can be found at (http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf)
 > The orientation value can be any of the following values:
 > * 1 - The 0th row represents the visual top of the image, and the 0th column represents the visual left-hand side.
 > * 2 - The 0th row represents the visual top of the image, and the 0th column represents the visual right-hand side.
@@ -117,10 +117,10 @@ The module will return an array of objects in the "photos" attribute.
 > * 8 - The 0th row represents the visual left-hand side of the image, and the 0th column represents the visual bottom.
 
 7. creationDate
-> The date the photo was created.  This is returned as string in UTC format.
+> The date the photo was created.  This is returned as a string in UTC format.
 
 8. availableFormats 
-> This is a collection of different formats that are available i.e. jpeg.
+> This is a collection of different formats that are available, i.e. jpeg.
 
 9. waysToAccess
 > This is a collection of URLs that could be used to access the photo.
@@ -128,8 +128,8 @@ The module will return an array of objects in the "photos" attribute.
 
 ## Usage
 
-It is very simple to use the module.  After registering the module with the application add
-the following code to your project.
+It is very simple to use the module.  After registering the module with the application, add
+the following code to your project:
 
 var photolibrary = require('qs.photos.library');
 var photos = photolibrary.photos({
