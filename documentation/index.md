@@ -1,4 +1,4 @@
-# urbanimagelibrary Module
+# Urban Image Library Module
 
 ## Description
 
@@ -38,7 +38,7 @@ The urbanimagelibrary variable is a reference to the Module object.
 
 ## Reference
 
-### ___PROJECTNAMEASIDENTIFIER__.photos
+### urbanimagelibrary.photos
 
 INPUT 
 -----
