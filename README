@@ -50,7 +50,7 @@ It may be installed in "/Library/Application\ Support/Titanium" or "~/Library/Ap
    cd /Library/Application\ Support/Titanium" or cd ~/Library/Application\ Support/Titanium depending up 
    on where the SDK is located.
 
-   unzip qs.urbanimage.library-iphone-1.0.zip.  
+   unzip qs.urbanimage.library-iphone-1.0.zip 
 
    This will install the module into the appropriate directories.
 
