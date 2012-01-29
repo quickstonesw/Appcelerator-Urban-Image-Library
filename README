@@ -29,9 +29,30 @@ section of photos based on start and end parameters.
 INSTALL THE URBAN IMAGE MODULE
 ------------------------------
 
-1. Run `build.py` which creates your distribution
-2. cd to `/Library/Application Support/Titanium`
-3. copy this zip file into the folder of your Titanium SDK
+Per instructions in the "Module Development" (https://wiki.appcelerator.org/display/guides/iOS+Module+Development+Guide)
+guide in section 0 "Setting Up your Module Environment" you'll need to determine where your Titanium SDK is installed.  
+It may be installed in "/Library/Application\ Support/Titanium" or "~/Library/Application\ Support/Titanium".
+
+1. Run 'build.py' this will create a zip file that can then be installed.
+
+2. Copy the newly created zip file to the place where the Titanium SDK is installed.
+
+   cp qs.urbanimage.library-iphone-1.0.zip /Library/Application\ Support/Titanium
+   
+   --- or if you Titanium SDK is installed in your home directory ---
+
+   cp qs.urbanimage.library-iphone-1.0.zip ~/Library/Application\ Support/Titanium
+
+3. The instructions in the "Testing your Module in a test application" section of the "Module Development" indicate
+   that the Titanium compiler will unzip the newly copied module.  That hasn't been my experience.  I have found that
+   it is necessary to manually unzip the module.
+
+   cd /Library/Application\ Support/Titanium" or cd ~/Library/Application\ Support/Titanium depending up 
+   on where the SDK is located.
+
+   unzip qs.urbanimage.library-iphone-1.0.zip.  
+
+   This will install the module into the appropriate directories.
 
 REGISTER THE URBAN IMAGE MODULE
 -------------------------------
