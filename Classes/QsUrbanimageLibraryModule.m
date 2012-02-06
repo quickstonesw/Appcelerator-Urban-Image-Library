@@ -152,9 +152,32 @@
                 
                 ALAssetRepresentation *rep = [result defaultRepresentation];
                 CGImageRef fullImageRef = [rep fullResolutionImage];
+                
                 if (fullImageRef)
                 {
-                    UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef];
+                    UIImageOrientation orientation = UIImageOrientationUp;
+ 
+                    
+                    int sourceOrientation = [[result valueForProperty:ALAssetPropertyOrientation] intValue];
+                    
+                    if (sourceOrientation == 0) // Up
+                        orientation = UIImageOrientationUp;
+                    if (sourceOrientation == 1) // Down
+                        orientation = UIImageOrientationDown;
+                    else if (sourceOrientation == 2) //Right
+                        orientation = UIImageOrientationLeft;
+                    if (sourceOrientation == 3) // Left
+                        orientation = UIImageOrientationRight;
+                    else if (sourceOrientation == 4) // Up Mirrored
+                        orientation = UIImageOrientationUpMirrored;
+                    else if (sourceOrientation == 5) // Down Mirrored
+                        orientation = UIImageOrientationDownMirrored;
+                    else if (sourceOrientation == 6) // Left Mirrored
+                        orientation = UIImageOrientationLeftMirrored;
+                    else if (sourceOrientation == 7) // Right Mirrored
+                        orientation = UIImageOrientationRightMirrored;
+
+                    UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef scale:1.0 orientation:orientation];
                     [props setObject:[[[TiBlob alloc] initWithImage:fullImage] autorelease] 
                               forKey:@"image"];
                 }

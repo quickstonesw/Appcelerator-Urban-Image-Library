@@ -87,7 +87,7 @@ The module will return an array of objects in the "photos" attribute.
 
 #### image
 
-> The full resolution of the image.
+> The full resolution of the image.  The image has also been properly rotated so that it is "pointing up".
 
 #### thumbnail
 

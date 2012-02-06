@@ -51,6 +51,7 @@ function clickPhoto(photoView, photo) {
 				w.close();
 			});
 			w.add(mapview);
+            
 			var toolbar = Ti.UI.iOS.createToolbar({
 				items:[closeButton],
 				bottom:'base',
@@ -95,10 +96,10 @@ function updateTableView(photos) {
 			height: 10,
 			left: 4 + ((counter % 4) * (photo.thumbnail.width +4))
 		});
-		if (counter % 4 == 0) {
+		if (counter % 4 === 0) {
 			row = Ti.UI.createTableViewRow({
 				height: 100,
-				selectionStyle: Titanium.UI.iPhone.TableViewCellSelectionStyle.NONE,
+				selectionStyle: Titanium.UI.iPhone.TableViewCellSelectionStyle.NONE
 			});
 			data.push(row);
 		}
