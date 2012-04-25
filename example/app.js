@@ -27,14 +27,29 @@ window.add(tableView);
 
 function clickPhoto(photoView, photo) {
 	photoView.addEventListener("click", function(e) {
+    var w = Ti.UI.createWindow({navBarHidden:false});
+    var closeButton = Ti.UI.createButton({
+      title: "Close",
+      style: Titanium.UI.iPhone.SystemButtonStyle.BORDERED
+    });
+    closeButton.addEventListener("click", function(e){
+      w.close();
+    });
+    var toolbar = Ti.UI.iOS.createToolbar({
+      items:[closeButton],
+      bottom:'base',
+      translucent: true
+    });
+
 		if (typeof photo.location !== 'undefined') {
-            /*
 			var photoAnnotation = Ti.Map.createAnnotation({
 				latitude: photo.location.latitude,
 				longitude: photo.location.longitude,
 				title: "Taken: " + photo.creationDate
 			});
-			
+		  Ti.API.debug(photo.creationDate);	
+		  Ti.API.debug(photo.location.latitude);	
+		  Ti.API.debug(photo.location.longitude);	
 			var mapview = Titanium.Map.createView({
 				mapType: Titanium.Map.STANDARD_TYPE,
 				region:{latitude:photo.location.latitude, longitude:photo.location.longitude, latitudeDelta:0.5, longitudeDelta:0.5},
@@ -42,45 +57,33 @@ function clickPhoto(photoView, photo) {
 				userLocation:true,
 				annotations:[photoAnnotation]
 			});
-			mapview.selectAnnotation(photoAnnotation);
-            */
-			var w = Ti.UI.createWindow({navBarHidden:false});
-			var closeButton = Ti.UI.createButton({
-				title: "Close",
-				style: Titanium.UI.iPhone.SystemButtonStyle.BORDERED
-			});
-			closeButton.addEventListener("click", function(e){
-				w.close();
-			});
-			//w.add(mapview);
-            
-			var toolbar = Ti.UI.iOS.createToolbar({
-				items:[closeButton],
-				bottom:'base',
-				translucent: true
-			});
-            var imagev = Ti.UI.createImageView({});
-            w.add(imagev);
-            Ti.API.debug(photo.waysToAccess);
-            Ti.API.debug(photo.waysToAccess["public.jpeg"]);
-            urbanimagelibrary.photo({
-                success: function(e) {
-                    imagev.setImage(e.photo.image);
-                },
-                error: function(e) {
-                    Ti.API.error("An error occured! " + e);
-                },
-                url: photo.waysToAccess["public.jpeg"] 
-            });
 
-			w.add(toolbar);
-			w.open({
-				model:true, 
-				modalTransitionStyle:Ti.UI.iPhone.MODAL_TRANSITION_STYLE_COVER_VERTICAL, 
-				modalStyle:Ti.UI.iPhone.MODAL_PRESENTATION_FULLSCREEN, 
-				navBarHidden:false
-			});
+			w.add(mapview);
+    } else {
+      var imagev = Ti.UI.createImageView({});
+      w.add(imagev);
+
+      Ti.API.debug(photo.waysToAccess);
+      Ti.API.debug(photo.waysToAccess["public.jpeg"]);
+
+      urbanimagelibrary.photo({
+        success: function(e) {
+          imagev.setImage(e.photo.image);
+        },
+        error: function(e) {
+          Ti.API.error("An error occured! " + e);
+        },
+        url: photo.waysToAccess["public.jpeg"] 
+      });
+
 		}
+    w.add(toolbar);
+    w.open({
+      model:true, 
+      modalTransitionStyle:Ti.UI.iPhone.MODAL_TRANSITION_STYLE_COVER_VERTICAL, 
+      modalStyle:Ti.UI.iPhone.MODAL_PRESENTATION_FULLSCREEN, 
+      navBarHidden:false
+    });
 	});
 }
 
