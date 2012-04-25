@@ -19,6 +19,7 @@
 #import "TiUtils.h"
 
 @implementation QsUrbanimageLibraryModule
+@synthesize assetLibrary;
 
 #pragma mark Internal
 
@@ -40,8 +41,8 @@
 {
 	// this method is called when the module is first loaded
 	// you *must* call the superclass
-	[super startup];
-	
+	assetLibrary = [[ALAssetsLibrary alloc] init];
+    [super startup];
 	NSLog(@"[INFO] %@ loaded",self);
 }
 
@@ -60,6 +61,7 @@
 -(void)dealloc
 {
 	// release any resources that have been retained by the module
+    RELEASE_TO_NIL(assetLibrary);
 	[super dealloc];
 }
 
@@ -114,6 +116,7 @@
     
     NSUInteger start = [TiUtils intValue:[args objectForKey:@"start"]];
     NSUInteger end = [TiUtils intValue:[args objectForKey:@"end"]];
+    Boolean includeFullSizeImage = [TiUtils boolValue:[args objectForKey:@"includeFullSizeImage"] def:true];
     
     if (type == nil)
         type = @"photos";
@@ -133,10 +136,50 @@
     else if ([@"all" caseInsensitiveCompare:type] == NSOrderedSame)
         assetGroupType = ALAssetsGroupAll;
     
-    [self buildAssets:assetGroupType start:start end:end];
+    [self buildAssets:assetGroupType start:start end:end includeFullSizeImage:includeFullSizeImage];
 }
 
--(void)buildAssets:(NSUInteger) assetGroupType start:(NSUInteger)start end:(NSUInteger)end
+-(void)photo:(id)args
+{
+    ENSURE_UI_THREAD_1_ARG(args);
+    ENSURE_SINGLE_ARG(args, NSDictionary);
+    
+    NSString *url = [args objectForKey:@"url"];
+    ENSURE_STRING_OR_NIL(url);
+    
+    id error = [args objectForKey:@"error"];
+    RELEASE_TO_NIL(errorCallback);
+    
+    id success = [args objectForKey:@"success"];
+    RELEASE_TO_NIL(successCallback);
+    
+    errorCallback = [error retain];
+    successCallback = [success retain];
+    
+    if (url)
+    {
+        NSURL *imageRefURL = [NSURL URLWithString:url];
+        void (^ALAssetsLibraryAssetForURLResultBlock)(ALAsset *) = ^(ALAsset *result)
+        {
+            NSDictionary *event = [NSDictionary dictionaryWithObjectsAndKeys:
+                                   [self buildProperties:result includeFullSizeImage:true], @"photo", nil];
+            
+            [self _fireEventToListener:@"success" withObject:event listener:successCallback thisObject:nil];
+        };
+        
+        
+        NSLog(@"%@",imageRefURL);
+        [assetLibrary assetForURL:imageRefURL
+                 resultBlock:ALAssetsLibraryAssetForURLResultBlock 
+                failureBlock:^(NSError *error){
+                    if (errorCallback)
+                        [self _fireEventToListener:@"error" withObject:error listener:errorCallback thisObject:nil];
+                }];
+    }
+    
+}
+
+-(void)buildAssets:(NSUInteger) assetGroupType start:(NSUInteger)start end:(NSUInteger)end includeFullSizeImage:(Boolean)includeFullSizeImage
 {
     NSMutableArray *assets = [[[NSMutableArray alloc] init] autorelease];
     
@@ -148,85 +191,7 @@
             {
                 if (end > 0 && index > end) return;
                 
-                NSMutableDictionary *props = [NSMutableDictionary dictionary];
-                
-                ALAssetRepresentation *rep = [result defaultRepresentation];
-                CGImageRef fullImageRef = [rep fullResolutionImage];
-                
-                if (fullImageRef)
-                {
-                    UIImageOrientation orientation = UIImageOrientationUp;
- 
-                    
-                    int sourceOrientation = [[result valueForProperty:ALAssetPropertyOrientation] intValue];
-                    
-                    if (sourceOrientation == 0) // Up
-                        orientation = UIImageOrientationUp;
-                    if (sourceOrientation == 1) // Down
-                        orientation = UIImageOrientationDown;
-                    else if (sourceOrientation == 2) //Right
-                        orientation = UIImageOrientationLeft;
-                    if (sourceOrientation == 3) // Left
-                        orientation = UIImageOrientationRight;
-                    else if (sourceOrientation == 4) // Up Mirrored
-                        orientation = UIImageOrientationUpMirrored;
-                    else if (sourceOrientation == 5) // Down Mirrored
-                        orientation = UIImageOrientationDownMirrored;
-                    else if (sourceOrientation == 6) // Left Mirrored
-                        orientation = UIImageOrientationLeftMirrored;
-                    else if (sourceOrientation == 7) // Right Mirrored
-                        orientation = UIImageOrientationRightMirrored;
-
-                    UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef scale:1.0 orientation:orientation];
-                    [props setObject:[[[TiBlob alloc] initWithImage:fullImage] autorelease] 
-                              forKey:@"image"];
-                }
-                
-                CGImageRef thumbnailRef = [result thumbnail];
-                if (thumbnailRef)
-                {
-                    UIImage *thumbnail = [UIImage imageWithCGImage:thumbnailRef];
-                    [props setObject:[[[TiBlob alloc] initWithImage:thumbnail] autorelease] 
-                              forKey:@"thumbnail"];
-                }
-                
-                NSString *assetPropertyType = [result valueForProperty:ALAssetPropertyType];
-                NSString *type = nil;
-                
-                if ([@"ALAssetTypePhoto" isEqualToString:assetPropertyType])
-                    type = @"photo";
-                else if ([@"ALAssetTypeVideo" isEqualToString:assetPropertyType])
-                    type = @"video";
-                else
-                    type = @"unknown";
-                
-                [props setObject:type forKey:@"type"];
-                
-                CLLocation *location = [result valueForProperty:ALAssetPropertyLocation];
-                CLLocationCoordinate2D latlon = [location coordinate];
-                if (!isnan(latlon.latitude) && !(isnan(latlon.longitude)))
-                {
-                    [props setObject: [NSDictionary dictionaryWithObjectsAndKeys:
-                                       [NSNumber numberWithFloat:latlon.latitude], @"latitude",
-                                       [NSNumber numberWithFloat:latlon.longitude], @"longitude",
-                                       [location altitude], @"altitude",
-                                       [location course], @"course",
-                                       [location horizontalAccuracy], @"horizontalAccuracy",
-                                       [location verticalAccuracy], @"verticalAccuracy",
-                                       [location speed], @"speed",
-                                       [location timestamp], @"timestamp",
-                                       nil] 
-                              forKey: @"location"];
-                }
-                
-                if ([[result valueForProperty:ALAssetPropertyDuration] isKindOfClass:[NSNumber class]])
-                    [props setObject:[result valueForProperty:ALAssetPropertyDuration] forKey:@"playTime"];
-                [props setObject:[result valueForProperty:ALAssetPropertyOrientation] forKey:@"orientation"];
-                [props setObject:[TiUtils UTCDateForDate:[result valueForProperty:ALAssetPropertyDate]] forKey:@"creationDate"];
-                [props setObject:[result valueForProperty:ALAssetPropertyRepresentations] forKey:@"availableFormats"];
-                [props setObject:[result valueForProperty:ALAssetPropertyURLs] forKey:@"waysToAccess"];
-                
-                [assets addObject:props];
+                [assets addObject:[self buildProperties:result includeFullSizeImage:includeFullSizeImage]];
             }
         }
     };
@@ -244,13 +209,96 @@
         }
     };
     
-    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-    [library enumerateGroupsWithTypes:assetGroupType
+    [assetLibrary enumerateGroupsWithTypes:assetGroupType
                            usingBlock:assetGroupEnumerator
                          failureBlock: ^(NSError *error) {
                              if (errorCallback)
                                  [self _fireEventToListener:@"error" withObject:error listener:errorCallback thisObject:nil];
                          }];
+}
+
+-(NSDictionary*)buildProperties:(ALAsset*)asset includeFullSizeImage:(Boolean)includeFullSizeImage
+{
+    NSMutableDictionary *props = [NSMutableDictionary dictionary];
+    
+    ALAssetRepresentation *rep = [asset defaultRepresentation];
+    CGImageRef fullImageRef = [rep fullResolutionImage];
+    
+    if (includeFullSizeImage && fullImageRef)
+    {
+        UIImageOrientation orientation = UIImageOrientationUp;
+        
+        
+        int sourceOrientation = [[asset valueForProperty:ALAssetPropertyOrientation] intValue];
+        
+        if (sourceOrientation == 0) // Up
+            orientation = UIImageOrientationUp;
+        if (sourceOrientation == 1) // Down
+            orientation = UIImageOrientationDown;
+        else if (sourceOrientation == 2) //Right
+            orientation = UIImageOrientationLeft;
+        if (sourceOrientation == 3) // Left
+            orientation = UIImageOrientationRight;
+        else if (sourceOrientation == 4) // Up Mirrored
+            orientation = UIImageOrientationUpMirrored;
+        else if (sourceOrientation == 5) // Down Mirrored
+            orientation = UIImageOrientationDownMirrored;
+        else if (sourceOrientation == 6) // Left Mirrored
+            orientation = UIImageOrientationLeftMirrored;
+        else if (sourceOrientation == 7) // Right Mirrored
+            orientation = UIImageOrientationRightMirrored;
+        
+        UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef scale:1.0 orientation:orientation];
+        [props setObject:[[[TiBlob alloc] initWithImage:fullImage] autorelease] 
+                  forKey:@"image"];
+    }
+    
+    CGImageRef thumbnailRef = [asset thumbnail];
+    if (thumbnailRef)
+    {
+        UIImage *thumbnail = [UIImage imageWithCGImage:thumbnailRef];
+        [props setObject:[[[TiBlob alloc] initWithImage:thumbnail] autorelease] 
+                  forKey:@"thumbnail"];
+    }
+    
+    NSString *assetPropertyType = [asset valueForProperty:ALAssetPropertyType];
+    NSString *type = nil;
+    
+    if ([@"ALAssetTypePhoto" isEqualToString:assetPropertyType])
+        type = @"photo";
+    else if ([@"ALAssetTypeVideo" isEqualToString:assetPropertyType])
+        type = @"video";
+    else
+        type = @"unknown";
+    
+    [props setObject:type forKey:@"type"];
+    
+    CLLocation *location = [asset valueForProperty:ALAssetPropertyLocation];
+    CLLocationCoordinate2D latlon = [location coordinate];
+    if (!isnan(latlon.latitude) && !(isnan(latlon.longitude)))
+    {
+        [props setObject: [NSDictionary dictionaryWithObjectsAndKeys:
+                           [NSNumber numberWithFloat:latlon.latitude], @"latitude",
+                           [NSNumber numberWithFloat:latlon.longitude], @"longitude",
+                           [location altitude], @"altitude",
+                           [location course], @"course",
+                           [location horizontalAccuracy], @"horizontalAccuracy",
+                           [location verticalAccuracy], @"verticalAccuracy",
+                           [location speed], @"speed",
+                           [location timestamp], @"timestamp",
+                           nil] 
+                  forKey: @"location"];
+    }
+    
+    if ([[asset valueForProperty:ALAssetPropertyDuration] isKindOfClass:[NSNumber class]])
+        [props setObject:[asset valueForProperty:ALAssetPropertyDuration] forKey:@"playTime"];
+    
+    [props setObject:[asset valueForProperty:ALAssetPropertyOrientation] forKey:@"orientation"];
+    [props setObject:[TiUtils UTCDateForDate:[asset valueForProperty:ALAssetPropertyDate]] forKey:@"creationDate"];
+    [props setObject:[asset valueForProperty:ALAssetPropertyRepresentations] forKey:@"availableFormats"];
+    [props setObject:[asset valueForProperty:ALAssetPropertyURLs] forKey:@"waysToAccess"];
+    
+    return props;
 }
 
 @end

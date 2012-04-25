@@ -28,6 +28,7 @@ window.add(tableView);
 function clickPhoto(photoView, photo) {
 	photoView.addEventListener("click", function(e) {
 		if (typeof photo.location !== 'undefined') {
+            /*
 			var photoAnnotation = Ti.Map.createAnnotation({
 				latitude: photo.location.latitude,
 				longitude: photo.location.longitude,
@@ -42,6 +43,7 @@ function clickPhoto(photoView, photo) {
 				annotations:[photoAnnotation]
 			});
 			mapview.selectAnnotation(photoAnnotation);
+            */
 			var w = Ti.UI.createWindow({navBarHidden:false});
 			var closeButton = Ti.UI.createButton({
 				title: "Close",
@@ -50,13 +52,27 @@ function clickPhoto(photoView, photo) {
 			closeButton.addEventListener("click", function(e){
 				w.close();
 			});
-			w.add(mapview);
+			//w.add(mapview);
             
 			var toolbar = Ti.UI.iOS.createToolbar({
 				items:[closeButton],
 				bottom:'base',
 				translucent: true
 			});
+            var imagev = Ti.UI.createImageView({});
+            w.add(imagev);
+            Ti.API.debug(photo.waysToAccess);
+            Ti.API.debug(photo.waysToAccess["public.jpeg"]);
+            urbanimagelibrary.photo({
+                success: function(e) {
+                    imagev.setImage(e.photo.image);
+                },
+                error: function(e) {
+                    Ti.API.error("An error occured! " + e);
+                },
+                url: photo.waysToAccess["public.jpeg"] 
+            });
+
 			w.add(toolbar);
 			w.open({
 				model:true, 
@@ -118,7 +134,8 @@ var photos = urbanimagelibrary.photos({
 	},
 	error: function(e) {
 		Ti.API.error("An error occured! " + e);
-	}
+	},
+    includeFullSizeImage: true 
 });
 
 window.open();

@@ -22,6 +22,12 @@
     KrollCallback *successCallback;
     KrollCallback *errorCallback;
 }
--(void)buildAssets:(NSUInteger)assetGroupType start:(NSUInteger)start end:(NSUInteger)end;
+
+@property (nonatomic, retain) ALAssetsLibrary *assetLibrary;
+
+-(void)buildAssets:(NSUInteger)assetGroupType start:(NSUInteger)start end:(NSUInteger)end 
+    includeFullSizeImage:(Boolean)includeFullSizeImage;
+
+-(NSDictionary*)buildProperties:(ALAsset*)asset includeFullSizeImage:(Boolean)includeFullSizeImage;
 
 @end
