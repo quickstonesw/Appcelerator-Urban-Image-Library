@@ -25,6 +25,23 @@ var window = Ti.UI.createWindow({
 var tableView = Ti.UI.createTableView({});
 window.add(tableView);
 
+function clickGroup(row, group) {
+	row.addEventListener("click", function(e) {
+    Ti.API.debug("We got clicked.");
+    var photos = urbanimagelibrary.photos({
+      success: function(e) {
+        Ti.API.debug("Number of photos returned: " + e.photos.length);
+        updateTableView(e.photos);
+      },
+      error: function(e) {
+        Ti.API.error("An error occured! " + e);
+      },
+      includeFullSizeImage: true,
+      groupId: group.id
+    });
+  });
+}
+
 function clickPhoto(photoView, photo) {
 	photoView.addEventListener("click", function(e) {
     var w = Ti.UI.createWindow({navBarHidden:false});
@@ -130,16 +147,50 @@ function updateTableView(photos) {
 	tableView.setData(data);
 }
 
-var photos = urbanimagelibrary.photos({
+function updateTableViewGroups(groups) {
+	var data = [];
+	var row;
+	for (var counter=0; counter < groups.length; counter++) {
+		var group = groups[counter];
+    var proportional = group.image.width / group.image.height;
+    var height = 60;
+    var width = 60 * proportional;
+		var image = Ti.UI.createImageView({
+			image: group.image,
+			height: height,
+			width: width,
+			top: 0,
+			left: 0
+		});
+		var nameLabel = Ti.UI.createLabel({
+			text:group.name + " ("+group.numImages+")",
+			font: {	fontSize: 16, fontWeight: 'bold'},
+			height: 15,
+			left:100 
+		});
+    row = Ti.UI.createTableViewRow({
+      height: 60,
+      selectionStyle: Titanium.UI.iPhone.TableViewCellSelectionStyle.NONE,
+      hasChild: true
+    });
+    data.push(row);
+		row.add(image);
+		row.add(nameLabel);
+		clickGroup(row, group);
+	}
+	tableView.setData(data);
+}
+var groups = urbanimagelibrary.groups({
 	success: function(e) {
-		Ti.API.debug("Number of photos returned: " + e.photos.length);
-		updateTableView(e.photos);
+		Ti.API.debug("Number of groups returned: " + e.groups.length);
+		Ti.API.debug(e.groups);
+		updateTableViewGroups(e.groups);
 	},
 	error: function(e) {
 		Ti.API.error("An error occured! " + e);
-	},
-    includeFullSizeImage: true 
+	}
 });
+
 
 window.open();
 

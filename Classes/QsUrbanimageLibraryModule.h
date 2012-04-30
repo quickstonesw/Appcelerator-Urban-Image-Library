@@ -24,10 +24,11 @@
 }
 
 @property (nonatomic, retain) ALAssetsLibrary *assetLibrary;
+@property (nonatomic, retain) NSMutableArray *assetGroups;
 
--(void)buildAssets:(NSUInteger)assetGroupType start:(NSUInteger)start end:(NSUInteger)end 
-    includeFullSizeImage:(Boolean)includeFullSizeImage;
+-(void)buildAssets:(NSUInteger)assetGroupType groupId:(NSInteger)groupId 
+    start:(NSUInteger)start end:(NSUInteger)end  includeFullSizeImage:(Boolean)includeFullSizeImage;
 
 -(NSDictionary*)buildProperties:(ALAsset*)asset includeFullSizeImage:(Boolean)includeFullSizeImage;
-
+-(NSDictionary*)buildGroupProperties:(ALAssetsGroup*)asset index:(NSUInteger)index;
 @end

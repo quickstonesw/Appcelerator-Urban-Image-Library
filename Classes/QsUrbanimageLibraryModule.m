@@ -19,7 +19,7 @@
 #import "TiUtils.h"
 
 @implementation QsUrbanimageLibraryModule
-@synthesize assetLibrary;
+@synthesize assetLibrary, assetGroups;
 
 #pragma mark Internal
 
@@ -97,6 +97,58 @@
 
 #pragma Public APIs
 
+-(void)groups:(id)args
+{
+    ENSURE_UI_THREAD_1_ARG(args);
+    ENSURE_SINGLE_ARG(args, NSDictionary);
+    
+    id error = [args objectForKey:@"error"];
+    RELEASE_TO_NIL(errorCallback);
+    
+    id success = [args objectForKey:@"success"];
+    RELEASE_TO_NIL(successCallback);
+    
+    errorCallback = [error retain];
+    successCallback = [success retain];
+    
+    assetLibrary = [[ALAssetsLibrary alloc] init];      
+    
+    
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSMutableArray *tempArray = [[NSMutableArray alloc] init];
+	self.assetGroups = tempArray;
+    [tempArray release];
+    
+    NSMutableArray *tempGroupArray = [[[NSMutableArray alloc] init] autorelease];
+                       
+    void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop) 
+    {
+        if (group != nil) {
+            [self.assetGroups addObject:group];
+            [tempGroupArray addObject:[self buildGroupProperties:group index:[self.assetGroups count]-1]];
+            if (successCallback) {
+                NSDictionary *event = [NSDictionary dictionaryWithObjectsAndKeys:
+                                       tempGroupArray, @"groups", nil];
+                [self _fireEventToListener:@"success" withObject:event listener:successCallback thisObject:nil];
+            }
+        }
+        
+    };
+                     
+    [assetLibrary enumerateGroupsWithTypes:ALAssetsGroupAll
+                                usingBlock:assetGroupEnumerator 
+                              failureBlock:^(NSError *error){
+                                  if (errorCallback)
+                                      [self _fireEventToListener:@"error" withObject:error listener:errorCallback thisObject:nil];
+                              }];
+    
+    
+                       
+    [pool release];
+
+}
+
+
 -(void)photos:(id)args
 {
     ENSURE_UI_THREAD_1_ARG(args);
@@ -117,6 +169,12 @@
     NSUInteger start = [TiUtils intValue:[args objectForKey:@"start"]];
     NSUInteger end = [TiUtils intValue:[args objectForKey:@"end"]];
     Boolean includeFullSizeImage = [TiUtils boolValue:[args objectForKey:@"includeFullSizeImage"] def:true];
+    NSUInteger groupId = [TiUtils intValue:[args objectForKey:@"groupId"] def:-1];
+    
+    // Determine if the groupId actually exists
+    if (groupId > [self.assetGroups count] -1) {
+        groupId = -1;
+    }
     
     if (type == nil)
         type = @"photos";
@@ -136,7 +194,7 @@
     else if ([@"all" caseInsensitiveCompare:type] == NSOrderedSame)
         assetGroupType = ALAssetsGroupAll;
     
-    [self buildAssets:assetGroupType start:start end:end includeFullSizeImage:includeFullSizeImage];
+    [self buildAssets:assetGroupType groupId:groupId start:start end:end includeFullSizeImage:includeFullSizeImage];
 }
 
 -(void)photo:(id)args
@@ -179,22 +237,25 @@
     
 }
 
--(void)buildAssets:(NSUInteger) assetGroupType start:(NSUInteger)start end:(NSUInteger)end includeFullSizeImage:(Boolean)includeFullSizeImage
+-(void)buildAssets:(NSUInteger) assetGroupType groupId:(NSInteger)groupId start:(NSUInteger)start end:(NSUInteger)end includeFullSizeImage:(Boolean)includeFullSizeImage
 {
+    
     NSMutableArray *assets = [[[NSMutableArray alloc] init] autorelease];
     
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     void (^assetEnumerator)(ALAsset *, NSUInteger, BOOL *) = 
     ^(ALAsset *result, NSUInteger index, BOOL *stop)
     {
         if(result != nil) {
             if (index >= start) 
             {
-                if (end > 0 && index > end) return;
+                if (end > 0 && index > end) *stop = YES;
                 
                 [assets addObject:[self buildProperties:result includeFullSizeImage:includeFullSizeImage]];
             }
         }
     };
+    [pool release];
     
     void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) =  
     ^(ALAssetsGroup *group, BOOL *stop) 
@@ -209,48 +270,82 @@
         }
     };
     
-    [assetLibrary enumerateGroupsWithTypes:assetGroupType
-                           usingBlock:assetGroupEnumerator
-                         failureBlock: ^(NSError *error) {
-                             if (errorCallback)
-                                 [self _fireEventToListener:@"error" withObject:error listener:errorCallback thisObject:nil];
-                         }];
+    if(groupId < 0) {
+        [assetLibrary enumerateGroupsWithTypes:assetGroupType
+                                    usingBlock:assetGroupEnumerator
+                                  failureBlock: ^(NSError *error) {
+                                      if (errorCallback)
+                                          [self _fireEventToListener:@"error" withObject:error listener:errorCallback thisObject:nil];
+                                  }];
+    } else {
+        ALAssetsGroup *assetGroup = [self.assetGroups objectAtIndex:groupId];
+        [assetGroup enumerateAssetsUsingBlock:assetEnumerator];
+        if (successCallback) {
+            NSDictionary *event = [NSDictionary dictionaryWithObjectsAndKeys:
+                                   assets, @"photos", nil];
+            [self _fireEventToListener:@"success" withObject:event listener:successCallback thisObject:nil];
+        }
+    }
+    
+    
+}
+
+-(NSDictionary*)buildGroupProperties:(ALAssetsGroup*)groupAsset index:(NSUInteger)index
+{
+    NSMutableDictionary *props = [NSMutableDictionary dictionary];
+    
+    [groupAsset setAssetsFilter:[ALAssetsFilter allPhotos]];
+    
+    NSInteger count = [groupAsset numberOfAssets];
+    NSString *name = [groupAsset valueForProperty:ALAssetsGroupPropertyName];
+    UIImage *posterImage = [UIImage imageWithCGImage:[groupAsset posterImage]];
+
+    
+    [props setObject:[NSNumber numberWithInt:index] forKey:@"id"];
+    [props setObject:[NSNumber numberWithInt:count] forKey:@"numImages"];
+    [props setObject:name forKey:@"name"];
+    [props setObject:[[[TiBlob alloc] initWithImage:posterImage] autorelease] 
+              forKey:@"image"];
+    
+    return props;
 }
 
 -(NSDictionary*)buildProperties:(ALAsset*)asset includeFullSizeImage:(Boolean)includeFullSizeImage
 {
     NSMutableDictionary *props = [NSMutableDictionary dictionary];
     
-    ALAssetRepresentation *rep = [asset defaultRepresentation];
-    CGImageRef fullImageRef = [rep fullResolutionImage];
-    
-    if (includeFullSizeImage && fullImageRef)
+    if (includeFullSizeImage)
     {
-        UIImageOrientation orientation = UIImageOrientationUp;
+        ALAssetRepresentation *rep = [asset defaultRepresentation];
+        CGImageRef fullImageRef = [rep fullResolutionImage];
+        
+        if (fullImageRef) {
+            UIImageOrientation orientation = UIImageOrientationUp;
         
         
-        int sourceOrientation = [[asset valueForProperty:ALAssetPropertyOrientation] intValue];
+            int sourceOrientation = [[asset valueForProperty:ALAssetPropertyOrientation] intValue];
         
-        if (sourceOrientation == 0) // Up
-            orientation = UIImageOrientationUp;
-        if (sourceOrientation == 1) // Down
-            orientation = UIImageOrientationDown;
-        else if (sourceOrientation == 2) //Right
-            orientation = UIImageOrientationLeft;
-        if (sourceOrientation == 3) // Left
-            orientation = UIImageOrientationRight;
-        else if (sourceOrientation == 4) // Up Mirrored
-            orientation = UIImageOrientationUpMirrored;
-        else if (sourceOrientation == 5) // Down Mirrored
-            orientation = UIImageOrientationDownMirrored;
-        else if (sourceOrientation == 6) // Left Mirrored
-            orientation = UIImageOrientationLeftMirrored;
-        else if (sourceOrientation == 7) // Right Mirrored
-            orientation = UIImageOrientationRightMirrored;
+            if (sourceOrientation == 0) // Up
+                orientation = UIImageOrientationUp;
+            if (sourceOrientation == 1) // Down
+                orientation = UIImageOrientationDown;
+            else if (sourceOrientation == 2) //Right
+                orientation = UIImageOrientationLeft;
+            if (sourceOrientation == 3) // Left
+                orientation = UIImageOrientationRight;
+            else if (sourceOrientation == 4) // Up Mirrored
+                orientation = UIImageOrientationUpMirrored;
+            else if (sourceOrientation == 5) // Down Mirrored
+                orientation = UIImageOrientationDownMirrored;
+            else if (sourceOrientation == 6) // Left Mirrored
+                orientation = UIImageOrientationLeftMirrored;
+            else if (sourceOrientation == 7) // Right Mirrored
+                orientation = UIImageOrientationRightMirrored;
         
-        UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef scale:1.0 orientation:orientation];
-        [props setObject:[[[TiBlob alloc] initWithImage:fullImage] autorelease] 
+            UIImage *fullImage = [UIImage imageWithCGImage:fullImageRef scale:1.0 orientation:orientation];
+            [props setObject:[[[TiBlob alloc] initWithImage:fullImage] autorelease] 
                   forKey:@"image"];
+        }
     }
     
     CGImageRef thumbnailRef = [asset thumbnail];
@@ -297,6 +392,7 @@
     [props setObject:[TiUtils UTCDateForDate:[asset valueForProperty:ALAssetPropertyDate]] forKey:@"creationDate"];
     [props setObject:[asset valueForProperty:ALAssetPropertyRepresentations] forKey:@"availableFormats"];
     [props setObject:[asset valueForProperty:ALAssetPropertyURLs] forKey:@"waysToAccess"];
+
     
     return props;
 }
