@@ -25,4 +25,4 @@ name: urbanimagelibrary
 moduleid: qs.urbanimage.library
 guid: c6d0f327-80e0-400f-929c-012ece34ec98
 platform: iphone
-minsdk: 1.8.0.1
+minsdk: 2.0.1.GA2 
