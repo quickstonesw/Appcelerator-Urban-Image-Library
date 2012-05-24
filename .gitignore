@@ -4,3 +4,8 @@ build
 *.zip
 *.swp
 deploy.sh
+xcuserdata
+.DS_Store
+*~.nib
+project.xcworkspace/
+
